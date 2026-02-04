@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INAS - Rede iAXON Brazil HSP</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #c0392b;
+            --light: #ecf0f1;
+            --border: #bdc3c7;
+            --card-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding-bottom: 60px;
+        }
+
+        /* HEADER */
+        header {
+            background: white;
+            padding: 1rem 2rem;
+            border-bottom: 4px solid var(--accent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .brand h1 { margin: 0; font-size: 1.4rem; color: var(--primary); }
+        .brand p { margin: 0; font-size: 0.9rem; color: #666; }
+        
+        .score-display {
+            background: var(--light);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-align: right;
+            border-left: 4px solid var(--success);
+        }
+        .score-value { font-weight: bold; font-size: 1.2rem; color: var(--success); }
+        .score-label { font-size: 0.8rem; color: #555; }
+
+        /* CONTAINER */
+        .container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        /* METADATA CARD */
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--card-shadow);
+            border-top: 3px solid transparent;
+        }
+
+        .meta-card { border-top-color: var(--secondary); }
+        .item-card { border-top-color: var(--accent); transition: transform 0.2s; }
+        .item-card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .item-card.missing { border: 2px solid var(--danger); }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; font-size: 0.9rem; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        /* ITEM STYLES */
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        .item-id {
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-right: 10px;
+        }
+        .item-title { font-weight: 700; font-size: 1.1rem; }
+        .item-subtitle { color: #666; font-size: 0.9rem; font-style: italic; }
+        
+        /* OPTIONS */
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background: #f9f9f9;
+            padding: 1rem;
+            border-radius: 6px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 0.5rem;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .radio-option:hover { background: #eef2f5; }
+        .radio-option input { margin-right: 10px; transform: scale(1.2); }
+        .radio-label { font-weight: 500; }
+        .radio-desc { font-size: 0.85rem; color: #666; margin-left: 5px; }
+
+        /* CHECKBOX GRID FOR SUB-ITEMS */
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .check-item {
+            display: flex;
+            align-items: center;
+            background: #fff;
+            border: 1px solid var(--border);
+            padding: 0.5rem;
+            border-radius: 4px;
+        }
+        .check-item input { margin-right: 8px; }
+
+        /* COMMENTS */
+        .comment-box {
+            margin-top: 1rem;
+            display: none; /* Hidden by default, toggled */
+        }
+        .toggle-comment {
+            background: none;
+            border: none;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 0;
+            margin-top: 0.5rem;
+            text-decoration: underline;
+        }
+
+        /* ACTIONS FOOTER */
+        .actions-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            border-top: 1px solid var(--border);
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 900;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--secondary); color: var(--secondary); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ALERTS */
+        .alert { padding: 1rem; border-radius: 4px; margin-bottom: 1rem; display: none; }
+        .alert-error { background: #fadbd8; color: #721c24; border: 1px solid #f5c6cb; }
+        .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+
+        /* PRINT */
+        @media print {
+            .actions-bar, .toggle-comment { display: none; }
+            .card { break-inside: avoid; border: 1px solid #ddd; box-shadow: none; }
+            body { background: white; }
+        }
+        
+        /* Helper for N/A visual */
+        .na-option { color: #999; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">
+        <h1>INAS <span style="font-weight:300">Eletrônico</span></h1>
+        <p>Rede iAXON Brazil HSP v 2.0 (Agosto 2025)</p>
+    </div>
+    <div class="score-display">
+        <div class="score-label">Escore INAS Total (0-30)</div>
+        <div id="total-score" class="score-value">0</div>
+        <div id="supp-score" style="font-size:0.8rem; color:#666">Suplementares: 0</div>
+    </div>
+</header>
+
+<div class="container">
+
+    <div class="alert alert-info" style="display:block">
+        <i class="fas fa-info-circle"></i> <strong>Aviso:</strong> Esta é uma ferramenta de apoio à pesquisa. Os dados não são enviados para nenhum servidor (processamento local). O preenchimento não substitui o julgamento clínico.
+    </div>
+
+    <div id="error-box" class="alert alert-error"></div>
+
+    <div class="card meta-card">
+        <h3><i class="fas fa-user-tag"></i> Dados do Participante</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="participant_id">ID do Participante *</label>
+                <input type="text" id="participant_id" placeholder="Ex: HSP-001">
+            </div>
+            <div class="form-group">
+                <label for="evaluator">Avaliador / Centro</label>
+                <input type="text" id="evaluator" placeholder="Nome do Avaliador">
+            </div>
+            <div class="form-group">
+                <label for="eval_date">Data da Avaliação</label>
+                <input type="date" id="eval_date">
+            </div>
+            <div class="form-group">
+                <label for="consent_check">
+                    <input type="checkbox" id="consent_check" style="width:auto;"> 
+                    Declaro ter consentimento para registro destes dados.
+                </label>
+            </div>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-outline" id="btn-save-draft"><i class="fas fa-save"></i> Salvar Rascunho (Local)</button>
+            <button class="btn btn-outline" id="btn-load-draft"><i class="fas fa-upload"></i> Carregar Rascunho</button>
+            <button class="btn btn-outline" id="btn-clear" onclick="resetForm()"><i class="fas fa-trash"></i> Limpar</button>
+        </div>
+    </div>
+
+    <div id="form-container">
+        </div>
+
+    <div class="card">
+        <h4><i class="fas fa-tasks"></i> Checklist de Validação (Manual)</h4>
+        <ul style="font-size:0.9rem; color:#555;">
+            <li>Verifique se todos os itens "N/A" foram justificados nas observações.</li>
+            <li>Confirme se os reflexos assimétricos foram pontuados corretamente (Unilateral conta como sinal).</li>
+            <li>Para os itens suplementares (S), confirme se são relevantes para o fenótipo HSP específico.</li>
+        </ul>
+        <div class="form-group">
+            <label>Observações Gerais / Termos HPO Adicionais</label>
+            <textarea id="general-notes" rows="3" placeholder="Insira achados adicionais ou comentários globais..."></textarea>
+        </div>
+    </div>
+</div>
+
+<div class="actions-bar">
+    <button class="btn btn-primary" id="btn-export-json"><i class="fas fa-file-code"></i> JSON</button>
+    <button class="btn btn-primary" id="btn-export-csv"><i class="fas fa-file-csv"></i> CSV</button>
+    <button class="btn btn-success" id="btn-export-pdf"><i class="fas fa-file-pdf"></i> Gerar PDF Clínico</button>
+</div>
+
+<script>
+    // ==========================================
+    // 1. DATA MODEL (INAS SCALE)
+    // ==========================================
+    
+    /* Interpretação da Pontuação INAS:
+       INAS é uma contagem de sinais (0-30).
+       Geralmente: 0 = Normal/Não, 1 = Anormal/Sim.
+       Para Reflexos: Hiper ou Arreflexia = 1.
+       Para Unilateral/Bilateral: Qualquer presença = 1.
+       Para Sub-itens (ex: Paresia Face/Braço/Perna): Se qualquer um estiver marcado, o item conta 1.
+    */
+
+    const SCALE_DATA = [
+        // REFLEXES
+        {
+            id: "1", domain: "Reflexos", title: "Reflexo Bicepital (Biceps Reflex)",
+            type: "radio",
+            options: [
+                { val: 0, label: "Normal", score: 0 },
+                { val: 1, label: "Hiper-reflexia", score: 1 },
+                { val: 2, label: "Arreflexia", score: 1 }, // INAS counts signs (abnormalities)
+                { val: 9, label: "N/A", score: null }
+            ]
+        },
+        {
+            id: "2", domain: "Reflexos", title: "Reflexo Patelar (Patellar Reflex)",
+            type: "radio",
+            options: [
+                { val: 0, label: "Normal", score: 0 },
+                { val: 1, label: "Hiper-reflexia", score: 1 },
+                { val: 2, label: "Arreflexia", score: 1 },
+                { val: 9, label: "N/A", score: null }
+            ]
+        },
+        {
+            id: "3", domain: "Reflexos", title: "Reflexo Aquileu (Achilles Reflex)",
+            type: "radio",
+            options: [
+                { val: 0, label: "Normal", score: 0 },
+                { val: 1, label: "Hiper-reflexia", score: 1 },
+                { val: 2, label: "Arreflexia", score: 1 },
+                { val: 9, label: "N/A", score: null }
+            ]
+        },
+        {
+            id: "4", domain: "Reflexos", title: "Reflexo Plantar Extensor (Babinski)",
+            type: "radio",
+            options: [
+                { val: 0, label: "Ausente (None)", score: 0 },
+                { val: 1, label: "Unilateral", score: 1 },
+                { val: 2, label: "Bilateral", score: 1 },
+                { val: 9, label: "N/A", score: null }
+            ]
+        },
+        {
+            id: "5", domain: "Motor", title: "Espasticidade (Spasticity)",
+            type: "checklist",
+            desc: "Marque se presente em:",
+            subItems: ["Marcha (Gait)", "Membros Sup. (Upper Limbs)", "Membros Inf. (Lower Limbs)"],
+            naOption: true
+        },
+        // MOTOR SIGNS
+        {
+            id: "6", domain: "Motor", title: "Paresia (Paresis)",
+            type: "checklist",
+            desc: "Marque se presente em:",
+            subItems: [
+                "Face/Língua", 
+                "Membros Sup. Proximal", "Membros Sup. Distal", 
+                "Membros Inf. Proximal", "Membros Inf. Distal"
+            ],
+            naOption: true
+        },
+        {
+            id: "7", domain: "Motor", title: "Atrofia Muscular (Muscle Atrophy)",
+            type: "checklist",
+            desc: "Marque se presente em:",
+            subItems: [
+                "Face/Língua", 
+                "Membros Sup. Proximal", "Membros Sup. Distal", 
+                "Membros Inf. Proximal", "Membros Inf. Distal"
+            ],
+            naOption: true
+        },
+        {
+            id: "8", domain: "Motor", title: "Fasciculações (Fasciculations)",
+            type: "checklist",
+            desc: "Marque se presente em:",
+            subItems: ["Face/Língua", "Membros Superiores", "Membros Inferiores"],
+            naOption: true
+        },
+        {
+            id: "9", domain: "Motor", title: "Mioclonia (Myoclonus)",
+            type: "checklist",
+            desc: "Marque se presente em:",
+            subItems: ["Face/Língua", "Tronco", "Membros Superiores", "Membros Inferiores"],
+            naOption: true
+        },
+        {
+            id: "10", domain: "Motor", title: "Rigidez (Rigidity)",
+            type: "checklist",
+            desc: "Marque se presente em:",
+            subItems: ["Axial", "Membros Superiores", "Membros Inferiores"],
+            naOption: true
+        },
+        {
+            id: "11", domain: "Motor", title: "Coreia / Discinesia (Chorea/Dyskinesia)",
+            type: "checklist",
+            desc: "Marque se presente em:",
+            subItems: ["Face/Língua", "Pescoço", "Tronco", "Membros Superiores", "Membros Inferiores"],
+            naOption: true
+        },
+        {
+            id: "12", domain: "Motor", title: "Distonia (Dystonia)",
+            type: "checklist",
+            desc: "Marque se presente em:",
+            subItems: ["Face/Língua", "Pescoço", "Tronco", "Membros Superiores", "Membros Inferiores"],
+            naOption: true
+        },
+        {
+            id: "13", domain: "Motor", title: "Tremor de Repouso (Resting Tremor)",
+            type: "radio",
+            options: [
+                { val: 0, label: "Não", score: 0 },
+                { val: 1, label: "Sim", score: 1 },
+                { val: 9, label: "N/A", score: null }
+            ]
+        },
+        // SENSORY
+        {
+            id: "14", domain: "Sensorial", title: "Senso Vibratório Prejudicado (Impaired vibration)",
+            subtitle: "No maléolo externo (<4/8)",
+            type: "radio",
+            options: [
+                { val: 0, label: "Não (Normal)", score: 0 },
+                { val: 1, label: "Unilateral", score: 1 },
+                { val: 2, label: "Bilateral", score: 1 },
+                { val: 9, label: "N/A", score: null }
+            ]
+        },
+        {
+            id: "S2", domain: "Sensorial (Supl)", title: "Senso Tátil Prejudicado (Impaired Touch)",
+            type: "radio",
+            isSupplementary: true,
+            options: [
+                { val: 0, label: "Não", score: 0 },
+                { val: 1, label: "Unilateral", score: 1 },
+                { val: 2, label: "Bilateral", score: 1 },
+                { val: 9, label: "N/A", score: null }
+            ]
+        },
+        {
+            id: "S3", domain: "Sensorial (Supl)", title: "Senso de Posição Prejudicado (Joint position)",
+            subtitle: "No hálux (great toe)",
+            type: "radio",
+            isSupplementary: true,
+            options: [
+                { val: 0, label: "Não", score: 0 },
+                { val: 1, label: "Unilateral", score: 1 },
+                { val: 2, label: "Bilateral", score: 1 },
+                { val: 9, label: "N/A", score: null }
+            ]
+        },
+        // OCULOMOTOR
+        {
+            id: "15", domain: "Oculomotor", title: "Perseguição suave interrompida (Broken up smooth pursuit)",
+            type: "radio",
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "16", domain: "Oculomotor", title: "Ondas quadradas na fixação (Square wave jerks)",
+            type: "radio",
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "17", domain: "Oculomotor", title: "Nistagmo downbeat na fixação",
+            type: "radio",
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "18", domain: "Oculomotor", title: "Nistagmo evocado pelo olhar (Horizontal)",
+            type: "radio",
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "19", domain: "Oculomotor", title: "Nistagmo evocado pelo olhar (Vertical)",
+            type: "radio",
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "20", domain: "Oculomotor", title: "Oftalmoparesia no olhar horizontal",
+            type: "radio",
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "21", domain: "Oculomotor", title: "Oftalmoparesia no olhar vertical",
+            type: "radio",
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "22", domain: "Oculomotor", title: "Lentificação das sacadas (Slowing of saccades)",
+            type: "radio",
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "23", domain: "Oculomotor", title: "Sacadas hipométricas (Hypometric saccades)",
+            type: "radio",
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "24", domain: "Oculomotor", title: "Sacadas hipermétricas (Hypermetric saccades)",
+            type: "radio",
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        // OUTRAS FUNÇÕES
+        {
+            id: "25", domain: "Outros", title: "Acuidade Visual Prejudicada (Impaired visual acuity)",
+            subtitle: "< 0.6 c.cc, binocular, distância",
+            type: "radio",
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "26", domain: "Outros", title: "Visão Dupla (Double vision)",
+            type: "radio",
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "27", domain: "Outros", title: "Disfagia (Dysphagia)",
+            type: "radio",
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "28", domain: "Outros", title: "Disfunção Urinária (Urinary dysfunction)",
+            type: "radio",
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "S4", domain: "Outros (Supl)", title: "Disfunção Intestinal (Bowel dysfunction)",
+            type: "radio",
+            isSupplementary: true,
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "S5", domain: "Outros (Supl)", title: "Disfunção Sexual (Sexual dysfunction)",
+            type: "radio",
+            isSupplementary: true,
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "29", domain: "Cognitivo", title: "Prejuízo Cognitivo (Cognitive impairment)",
+            type: "radio",
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        // SKELETAL
+        {
+            id: "S6", domain: "Esquelético (Supl)", title: "Pés Cavos (Pes cavus)",
+            type: "radio",
+            isSupplementary: true,
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "S7", domain: "Esquelético (Supl)", title: "Dedos em martelo (Hammer toes)",
+            type: "radio",
+            isSupplementary: true,
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "S8", domain: "Esquelético (Supl)", title: "Escoliose (Scoliosis)",
+            type: "radio",
+            isSupplementary: true,
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        },
+        {
+            id: "30", domain: "Outros", title: "Outros achados clínicos (Other clinical findings)",
+            type: "radio",
+            subtitle: "Reporte anormalidades adicionais nas observações",
+            options: [{ val: 0, label: "Não", score: 0 }, { val: 1, label: "Sim", score: 1 }, { val: 9, label: "N/A", score: null }]
+        }
+    ];
+
+    // ==========================================
+    // 2. APP LOGIC
+    // ==========================================
+
+    const formContainer = document.getElementById('form-container');
+    const totalScoreEl = document.getElementById('total-score');
+    const suppScoreEl = document.getElementById('supp-score');
+    const errorBox = document.getElementById('error-box');
+
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', () => {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('eval_date').value = today;
+        renderForm();
+    });
+
+    function renderForm() {
+        formContainer.innerHTML = '';
+        
+        SCALE_DATA.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = 'card item-card';
+            card.dataset.id = item.id;
+            
+            // Header
+            let html = `
+                <div class="item-header">
+                    <div>
+                        <span class="item-id">${item.id}</span>
+                        <span class="item-title">${item.title}</span>
+                        ${item.subtitle ? `<div class="item-subtitle">${item.subtitle}</div>` : ''}
+                        ${item.isSupplementary ? `<div class="item-subtitle" style="color:var(--accent)">*Item Suplementar</div>` : ''}
+                    </div>
+                </div>
+            `;
+
+            // Input Area
+            html += `<div class="options-container">`;
+
+            if (item.type === 'radio') {
+                item.options.forEach(opt => {
+                    html += `
+                        <label class="radio-option ${opt.label === 'N/A' ? 'na-option' : ''}">
+                            <input type="radio" name="item_${item.id}" value="${opt.val}" onchange="calculateScore()">
+                            <span class="radio-label">${opt.label}</span>
+                            ${opt.score !== null && opt.score > 0 ? `<span class="radio-desc">(Pontua 1)</span>` : ''}
+                        </label>
+                    `;
+                });
+            } 
+            else if (item.type === 'checklist') {
+                html += `<div style="margin-bottom:5px; font-weight:500">${item.desc}</div>`;
+                html += `<div class="checkbox-grid">`;
+                item.subItems.forEach((sub, subIdx) => {
+                    html += `
+                        <label class="check-item">
+                            <input type="checkbox" name="item_${item.id}_sub" value="${sub}" onchange="calculateScore()">
+                            ${sub}
+                        </label>
+                    `;
+                });
+                html += `</div>`;
+                // N/A Checkbox for the whole item
+                if (item.naOption) {
+                    html += `
+                        <label class="radio-option na-option" style="margin-top:10px">
+                            <input type="checkbox" name="item_${item.id}_na" value="NA" onchange="toggleChecklistNA('${item.id}')">
+                            N/A (Não avaliado)
+                        </label>
+                    `;
+                }
+            }
+
+            html += `</div>`; // End options
+
+            // Comments
+            html += `
+                <button type="button" class="toggle-comment" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block'">+ Adicionar comentário</button>
+                <textarea class="comment-box form-control" id="comment_${item.id}" rows="2" placeholder="Detalhes para item ${item.id}..."></textarea>
+            `;
+
+            card.innerHTML = html;
+            formContainer.appendChild(card);
+        });
+    }
+
+    // Handle N/A logic for checklists (disable others if NA selected)
+    window.toggleChecklistNA = function(itemId) {
+        const naCheck = document.querySelector(`input[name="item_${itemId}_na"]`);
+        const subChecks = document.querySelectorAll(`input[name="item_${itemId}_sub"]`);
+        
+        subChecks.forEach(cb => {
+            cb.disabled = naCheck.checked;
+            if (naCheck.checked) cb.checked = false;
+        });
+        calculateScore();
+    }
+
+    window.calculateScore = function() {
+        let total = 0;
+        let suppTotal = 0;
+        let missing = 0;
+        
+        SCALE_DATA.forEach(item => {
+            let itemScore = 0;
+            let answered = false;
+
+            if (item.type === 'radio') {
+                const selected = document.querySelector(`input[name="item_${item.id}"]:checked`);
+                if (selected) {
+                    answered = true;
+                    const val = parseInt(selected.value);
+                    // Standard INAS scoring: Normal=0, Abnormal=1. N/A=null
+                    const optObj = item.options.find(o => o.val === val);
+                    if (optObj && optObj.score === 1) itemScore = 1;
+                }
+            } 
+            else if (item.type === 'checklist') {
+                const na = document.querySelector(`input[name="item_${item.id}_na"]`)?.checked;
+                if (na) {
+                    answered = true;
+                } else {
+                    const checkedSubs = document.querySelectorAll(`input[name="item_${item.id}_sub"]:checked`);
+                    if (checkedSubs.length > 0) {
+                        itemScore = 1; // If any sub-item is present, score is 1 for the main item
+                        answered = true; 
+                    } else {
+                        // For checklists, "answered" is tricky. Assuming if not NA and not checked, it's "No" (Normal).
+                        // But explicitly, user should look at it. 
+                        // For this app, we consider it "answered" implicitly as 0 unless user marks NA.
+                        answered = true; 
+                    }
+                }
+            }
+
+            // Update UI
+            if (item.isSupplementary) {
+                suppTotal += itemScore;
+            } else {
+                total += itemScore;
+            }
+        });
+
+        totalScoreEl.innerText = total;
+        suppScoreEl.innerText = `Suplementares: ${suppTotal} | Total de Sinais: ${total + suppTotal}`;
+        
+        return { total, suppTotal };
+    }
+
+    function getFormData() {
+        const responses = [];
+        SCALE_DATA.forEach(item => {
+            let resObj = {
+                id: item.id,
+                domain: item.domain,
+                title: item.title,
+                value_label: "",
+                score: 0,
+                comment: document.getElementById(`comment_${item.id}`).value || ""
+            };
+
+            if (item.type === 'radio') {
+                const selected = document.querySelector(`input[name="item_${item.id}"]:checked`);
+                if (selected) {
+                    const val = parseInt(selected.value);
+                    const opt = item.options.find(o => o.val === val);
+                    resObj.value_label = opt.label;
+                    resObj.score = opt.score === null ? 'N/A' : opt.score;
+                } else {
+                    resObj.value_label = "MISSING";
+                    resObj.score = null;
+                }
+            } 
+            else if (item.type === 'checklist') {
+                const na = document.querySelector(`input[name="item_${item.id}_na"]`)?.checked;
+                if (na) {
+                    resObj.value_label = "N/A";
+                    resObj.score = 'N/A';
+                } else {
+                    const checkedSubs = Array.from(document.querySelectorAll(`input[name="item_${item.id}_sub"]:checked`))
+                        .map(cb => cb.parentNode.textContent.trim());
+                    
+                    if (checkedSubs.length > 0) {
+                        resObj.value_label = checkedSubs.join("; ");
+                        resObj.score = 1;
+                    } else {
+                        resObj.value_label = "Não/Nenhum";
+                        resObj.score = 0;
+                    }
+                }
+            }
+            responses.push(resObj);
+        });
+
+        return {
+            metadata: {
+                participant_id: document.getElementById('participant_id').value,
+                evaluator: document.getElementById('evaluator').value,
+                date: document.getElementById('eval_date').value,
+                general_notes: document.getElementById('general-notes').value,
+                timestamp: new Date().toISOString()
+            },
+            scores: calculateScore(),
+            items: responses
+        };
+    }
+
+    function validate() {
+        const data = getFormData();
+        if (!document.getElementById('consent_check').checked) {
+            showError("Por favor, confirme o consentimento para prosseguir.");
+            return false;
+        }
+        if (!data.metadata.participant_id) {
+            showError("ID do Participante é obrigatório.");
+            return false;
+        }
+        showError(""); // Clear
+        return data;
+    }
+
+    function showError(msg) {
+        errorBox.style.display = msg ? 'block' : 'none';
+        errorBox.innerText = msg;
+        if(msg) window.scrollTo(0, 0);
+    }
+
+    function resetForm() {
+        if(confirm("Tem certeza que deseja limpar todo o formulário?")) {
+            document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(el => {
+                el.checked = false;
+                el.disabled = false;
+            });
+            document.querySelectorAll('textarea, input[type="text"]').forEach(el => el.value = '');
+            calculateScore();
+            window.scrollTo(0, 0);
+        }
+    }
+
+    // ==========================================
+    // 3. EXPORT FUNCTIONS
+    // ==========================================
+
+    // JSON
+    document.getElementById('btn-export-json').addEventListener('click', () => {
+        const data = validate();
+        if (!data) return;
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `INAS_${data.metadata.participant_id}_${data.metadata.date}.json`;
+        a.click();
+    });
+
+    // CSV
+    document.getElementById('btn-export-csv').addEventListener('click', () => {
+        const data = validate();
+        if (!data) return;
+
+        let csv = "ID_Participante,Data,Avaliador,Item_ID,Dominio,Item_Titulo,Resposta,Score,Comentario\n";
+        data.items.forEach(item => {
+            const row = [
+                data.metadata.participant_id,
+                data.metadata.date,
+                data.metadata.evaluator,
+                item.id,
+                item.domain,
+                `"${item.title}"`,
+                `"${item.value_label}"`,
+                item.score,
+                `"${item.comment.replace(/\n/g, ' ')}"`
+            ];
+            csv += row.join(",") + "\n";
+        });
+
+        // Add Summary Row
+        csv += `SUMMARY,${data.metadata.date},,TOTAL_SCORE,,INAS_0-30,${data.scores.total},SUPPLEMENTARY,${data.scores.suppTotal}\n`;
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `INAS_${data.metadata.participant_id}_${data.metadata.date}.csv`;
+        a.click();
+    });
+
+    // PDF
+    document.getElementById('btn-export-pdf').addEventListener('click', () => {
+        const data = validate();
+        if (!data) return;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Header
+        doc.setFontSize(16);
+        doc.setTextColor(44, 62, 80);
+        doc.text("INAS - Inventory of Non-Ataxia Signs", 14, 20);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Rede iAXON Brazil HSP - Gerado em: ${new Date().toLocaleString()}`, 14, 26);
+
+        // Metadata Box
+        doc.setDrawColor(200);
+        doc.setFillColor(245, 247, 250);
+        doc.rect(14, 32, 182, 24, 'F');
+        
+        doc.setFontSize(11);
+        doc.setTextColor(0);
+        doc.text(`Participante: ${data.metadata.participant_id}`, 20, 40);
+        doc.text(`Data: ${data.metadata.date}`, 120, 40);
+        doc.text(`Avaliador: ${data.metadata.evaluator || 'N/D'}`, 20, 48);
+
+        // Score Summary
+        doc.setFontSize(14);
+        doc.setTextColor(39, 174, 96); // Green
+        doc.text(`Escore INAS (0-30): ${data.scores.total}`, 120, 52);
+        doc.setFontSize(10);
+        doc.text(`(+ ${data.scores.suppTotal} suplementares)`, 120, 57);
+
+        // Table
+        const tableBody = data.items.map(item => [
+            item.id,
+            item.title,
+            item.value_label,
+            item.score === null ? 'N/A' : item.score,
+            item.comment
+        ]);
+
+        doc.autoTable({
+            startY: 65,
+            head: [['#', 'Item', 'Resultado', 'Pts', 'Obs']],
+            body: tableBody,
+            theme: 'grid',
+            headStyles: { fillColor: [44, 62, 80], textColor: 255 },
+            styles: { fontSize: 9, cellPadding: 3 },
+            columnStyles: {
+                0: { cellWidth: 10, fontStyle: 'bold' },
+                1: { cellWidth: 70 },
+                2: { cellWidth: 50 },
+                3: { cellWidth: 15, halign: 'center' },
+                4: { cellWidth: 'auto' }
+            },
+            didParseCell: function(data) {
+                // Highlight abnormalities
+                if (data.section === 'body' && data.column.index === 3) {
+                    if (data.cell.raw == 1) {
+                        data.cell.styles.fontStyle = 'bold';
+                        data.cell.styles.textColor = [200, 0, 0];
+                    }
+                }
+            }
+        });
+
+        // Footer Observations
+        let finalY = doc.lastAutoTable.finalY + 10;
+        if (data.metadata.general_notes) {
+            doc.setFontSize(10);
+            doc.setTextColor(0);
+            doc.text("Observações Gerais:", 14, finalY);
+            const splitNotes = doc.splitTextToSize(data.metadata.general_notes, 180);
+            doc.text(splitNotes, 14, finalY + 5);
+        }
+
+        doc.save(`INAS_Prontuario_${data.metadata.participant_id}.pdf`);
+    });
+
+    // Local Storage (Drafts)
+    document.getElementById('btn-save-draft').addEventListener('click', () => {
+        const data = getFormData(); // Don't require full validation for draft
+        localStorage.setItem('inas_draft', JSON.stringify(data));
+        alert('Rascunho salvo no navegador!');
+    });
+
+    document.getElementById('btn-load-draft').addEventListener('click', () => {
+        const raw = localStorage.getItem('inas_draft');
+        if (!raw) {
+            alert('Nenhum rascunho encontrado.');
+            return;
+        }
+        if(!confirm("Substituir dados atuais pelo rascunho salvo?")) return;
+
+        const data = JSON.parse(raw);
+        
+        // Restore Metadata
+        document.getElementById('participant_id').value = data.metadata.participant_id;
+        document.getElementById('evaluator').value = data.metadata.evaluator;
+        document.getElementById('eval_date').value = data.metadata.date;
+        document.getElementById('general-notes').value = data.metadata.general_notes || "";
+
+        // Restore Items
+        // This is complex because we have radios and checkboxes.
+        // Simplification: We loop through saved items and match inputs.
+        data.items.forEach(savedItem => {
+            // Comments
+            const commentBox = document.getElementById(`comment_${savedItem.id}`);
+            if(commentBox) commentBox.value = savedItem.comment;
+
+            // Values
+            if (savedItem.score === 'N/A' || savedItem.value_label === 'N/A') {
+                // Try finding NA checkbox first (for checklists)
+                const naCheck = document.querySelector(`input[name="item_${savedItem.id}_na"]`);
+                if(naCheck) {
+                    naCheck.checked = true;
+                    toggleChecklistNA(savedItem.id);
+                }
+                // Or radio N/A (value 9)
+                const naRadio = document.querySelector(`input[name="item_${savedItem.id}"][value="9"]`);
+                if(naRadio) naRadio.checked = true;
+
+            } else {
+                // Radio
+                const radio = document.querySelector(`input[name="item_${savedItem.id}"]`);
+                if(radio) {
+                    // Find the value based on label is hard, rely on score/logic? 
+                    // Better: The saved data structure in this simple version doesn't store the raw value index easily.
+                    // For a robust app, we'd store the raw value. 
+                    // HEURISTIC RECOVERY for this demo:
+                    const radios = document.querySelectorAll(`input[name="item_${savedItem.id}"]`);
+                    radios.forEach(r => {
+                        // Very rough matching for demo purposes
+                        const parent = r.closest('label');
+                        if (parent && parent.innerText.includes(savedItem.value_label)) {
+                            r.checked = true;
+                        }
+                    });
+                }
+
+                // Checklist
+                const checkboxes = document.querySelectorAll(`input[name="item_${savedItem.id}_sub"]`);
+                if(checkboxes.length > 0 && savedItem.value_label && savedItem.value_label !== "Não/Nenhum") {
+                    const savedSubs = savedItem.value_label.split('; ');
+                    checkboxes.forEach(cb => {
+                        if(savedSubs.includes(cb.value)) cb.checked = true;
+                    });
+                }
+            }
+        });
+        calculateScore();
+    });
+
+</script>
+
+</body>
+</html>
